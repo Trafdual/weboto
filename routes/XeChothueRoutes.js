@@ -354,4 +354,31 @@ router.post('/duyetxedangky/:idxechothue', async (req, res) => {
   }
 })
 
+router.get('/getxedadangky/:userid', async (req, res) => {
+  try {
+    const iduser = req.params.userid
+    const user = await User.findById(iduser)
+    const xechothue = await Promise.all(
+      user.xechothue.map(async xe => {
+        const xedetail = await XeChoThue.findById(xe._id)
+        return {
+          _id: xedetail._id,
+          bienso: xedetail.bienso,
+          hangxe: xedetail.hangxe,
+          mauxe: xedetail.mauxe,
+          soghe: xedetail.soghe,
+          loaixe: xedetail.loaixe,
+          truyendong: xedetail.truyendong,
+          giachothue: xedetail.giachothue,
+          duyet: xedetail.duyet
+        }
+      })
+    )
+    res.json(xechothue)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+
 module.exports = router
