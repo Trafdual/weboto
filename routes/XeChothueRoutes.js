@@ -339,7 +339,7 @@ router.post('/duyetxedangky/:idxechothue', async (req, res) => {
           <p>Địa chỉ xe: ${xechothue.diachixe}</p>
           <p><strong>Cảm ơn bạn đã đăng ký!</strong></p>
           ;<p>
-  <strong>Đơn đăng ký của bạn đang được xem xét, chúng tôi sẽ phản hổi lại sớm nhât!</strong>
+  <strong>Đơn đăng ký của bạn đã được duyệt!</strong>
 </p>
         `
     }
