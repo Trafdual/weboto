@@ -2,6 +2,15 @@ const router = require('express').Router()
 const XeChoThue = require('../models/XeChoThueModel')
 const User = require('../models/UserModel')
 const upload = require('./upload')
+const nodemailer = require('nodemailer')
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'trafdual0810@gmail.com',
+    pass: 'plfu ulbm xnwj obha'
+  }
+})
 
 router.get('/getxechothue/:loaixe', async (req, res) => {
   try {
@@ -41,12 +50,12 @@ router.get('/getxechothue', async (req, res) => {
             giachothue: xe.giachothue,
             diachixe: xe.diachixe,
             giaotannoi: xe.giaotannoi,
-            image: xe.image[0] || '' // Lấy ảnh đầu tiên hoặc chuỗi rỗng
+            image: xe.image[0] || ''
           }
         }
-        return null // Trả về null nếu xe không được duyệt
+        return null
       })
-      .filter(xe => xe !== null) // Lọc bỏ các phần tử null
+      .filter(xe => xe !== null)
 
     res.json(xechothuejson)
   } catch (error) {
@@ -119,8 +128,32 @@ router.post(
         xechothue.sokmtrongngay = sokmtrongngay
         xechothue.phivuotgh = phivuotgh
       }
+
       xechothue.chuxe = user._id
       user.xechothue = xechothue._id
+
+      const mailOptions = {
+        from: 'trafdual0810@gmail.com',
+        to: 'totnghiepduan2023@gmail.com',
+        subject: 'Xác nhận đăng ký xe tự lái',
+        html: `
+          <h3>Thông tin đăng ký xe tự lái của bạn:</h3>
+          <p>Biển số: ${bienso}</p>
+          <p>Hãng xe: ${hangxe}</p>
+          <p>Mẫu xe: ${mauxe}</p>
+          <p>Số ghế: ${soghe}</p>
+          <p>Năm sản xuất: ${namsanxuat}</p>
+          <p>Giá cho thuê: ${giachothue} VND</p>
+          <p>Địa chỉ xe: ${diachixe}</p>
+          <p><strong>Cảm ơn bạn đã đăng ký!</strong></p>
+          ;<p>
+  <strong>Đơn đăng ký của bạn đang được xem xét, chúng tôi sẽ phản hổi lại sớm nhât!</strong>
+</p>
+        `
+      }
+
+      await transporter.sendMail(mailOptions)
+
       await xechothue.save()
       await user.save()
       res.json({ message: 'đăng ký xe tự lái thành công' })
@@ -291,7 +324,29 @@ router.post('/duyetxedangky/:idxechothue', async (req, res) => {
     const idxechothue = req.params.idxechothue
     const xechothue = await XeChoThue.findById(idxechothue)
     xechothue.duyet = true
+    const mailOptions = {
+      from: 'trafdual0810@gmail.com',
+      to: 'totnghiepduan2023@gmail.com',
+      subject: 'Xác nhận đăng ký xe tự lái',
+      html: `
+          <h3>Thông tin đăng ký xe tự lái của bạn:</h3>
+          <p>Biển số: ${xechothue.bienso}</p>
+          <p>Hãng xe: ${xechothue.hangxe}</p>
+          <p>Mẫu xe: ${xechothue.mauxe}</p>
+          <p>Số ghế: ${xechothue.soghe}</p>
+          <p>Năm sản xuất: ${xechothue.namsanxuat}</p>
+          <p>Giá cho thuê: ${xechothue.giachothue} VND</p>
+          <p>Địa chỉ xe: ${xechothue.diachixe}</p>
+          <p><strong>Cảm ơn bạn đã đăng ký!</strong></p>
+          ;<p>
+  <strong>Đơn đăng ký của bạn đang được xem xét, chúng tôi sẽ phản hổi lại sớm nhât!</strong>
+</p>
+        `
+    }
+
+    await transporter.sendMail(mailOptions)
     await xechothue.save()
+
     res.json({ message: 'duyệt xe thành công' })
   } catch (error) {
     console.error(error)
