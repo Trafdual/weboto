@@ -28,19 +28,26 @@ router.get('/getxechothue/:loaixe', async (req, res) => {
 router.get('/getxechothue', async (req, res) => {
   try {
     const xechothue = await XeChoThue.find().lean()
-    const xechothuejson = xechothue.map(xe => {
-      return {
-        _id: xe._id,
-        mauxe: xe.mauxe,
-        namsanxuat: xe.namsanxuat,
-        truyendong: xe.truyendong,
-        loaixe:xe.loaixe,
-        giachothue: xe.giachothue,
-        diachixe: xe.diachixe,
-        giaotannoi: xe.giaotannoi,
-        image: xe.image[0] || ''
-      }
-    })
+
+    const xechothuejson = xechothue
+      .map(xe => {
+        if (xe.duyet === true) {
+          return {
+            _id: xe._id,
+            mauxe: xe.mauxe,
+            namsanxuat: xe.namsanxuat,
+            truyendong: xe.truyendong,
+            loaixe: xe.loaixe,
+            giachothue: xe.giachothue,
+            diachixe: xe.diachixe,
+            giaotannoi: xe.giaotannoi,
+            image: xe.image[0] || '' // Lấy ảnh đầu tiên hoặc chuỗi rỗng
+          }
+        }
+        return null // Trả về null nếu xe không được duyệt
+      })
+      .filter(xe => xe !== null) // Lọc bỏ các phần tử null
+
     res.json(xechothuejson)
   } catch (error) {
     console.error(error)
@@ -65,7 +72,6 @@ router.post(
         hangxe,
         mauxe,
         soghe,
-        loaixe,
         namsanxuat,
         truyendong,
         loainhienlieu,
@@ -89,7 +95,6 @@ router.post(
         hangxe,
         mauxe,
         soghe,
-        loaixe,
         namsanxuat,
         truyendong,
         loainhienlieu,
@@ -103,7 +108,8 @@ router.post(
         dieukhoan,
         tinhnang
       })
-      xechothue.image.push(image)
+      xechothue.image = image
+      xechothue.loaixe = 'xe tự lái'
       if (giaotannoi === true) {
         xechothue.quangduonggiaoxe = quangduonggiaoxe
         xechothue.phigiaoxe = phigiaoxe
@@ -244,4 +250,53 @@ router.get('/getchitietxechothue/:idxechothue', async (req, res) => {
     res.status(500).json({ message: 'Đã xảy ra lỗi.' })
   }
 })
+
+router.get('/getduyetxe', async (req, res) => {
+  try {
+    const xechothue = await XeChoThue.find({ duyet: false }).lean()
+    const xechothuejson = await Promise.all(
+      xechothue.map(async xe => {
+        const user = await User.findById(xe.chuxe)
+        return {
+          _id: xe._id,
+          bienso: xe.bienso,
+          hangxe: xe.hangxe,
+          mauxe: xe.mauxe,
+          soghe: xe.soghe,
+          loaixe: xe.loaixe,
+          namsanxuat: xe.namsanxuat,
+          truyendong: xe.truyendong,
+          mota: xe.mota,
+          giachothue: xe.giachothue,
+          diachixe: xe.diachixe,
+          dieukhoan: xe.dieukhoan,
+          image: xe.image[0],
+          chuxe: {
+            hovaten: user.hovaten,
+            phone: user.phone,
+            email: user.email,
+            giaypheplaixe: user.giaypheplaixe || 'không có'
+          }
+        }
+      })
+    )
+    res.json(xechothuejson)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+router.post('/duyetxedangky/:idxechothue', async (req, res) => {
+  try {
+    const idxechothue = req.params.idxechothue
+    const xechothue = await XeChoThue.findById(idxechothue)
+    xechothue.duyet = true
+    await xechothue.save()
+    res.json({ message: 'duyệt xe thành công' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+
 module.exports = router
