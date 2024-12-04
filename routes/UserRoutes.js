@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/
     if (!password || !passwordRegex.test(password)) {
       return res.status(400).json({
-       message:
+        message:
           'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt'
       })
     }
@@ -74,6 +74,20 @@ router.post('/loginfull', async (req, res) => {
     } else {
       res.json({ role: 'user', user: user })
     }
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+router.post('/themgplx/:iduser', async (req, res) => {
+  try {
+    const iduser = req.params.iduser
+    const { sogiayphep, ngaysinh } = req.body
+    const user = await User.findById(iduser)
+    user.sogiayphep = sogiayphep
+    user.ngaysinh = ngaysinh
+    await user.save()
+    res.json(user)
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Đã xảy ra lỗi.' })

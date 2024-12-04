@@ -50,7 +50,8 @@ router.get('/getxechothue', async (req, res) => {
             giachothue: xe.giachothue,
             diachixe: xe.diachixe,
             giaotannoi: xe.giaotannoi,
-            image: xe.image[0] || ''
+            image: xe.image[0] || '',
+            chuxe: xe.chuxe,
           }
         }
         return null

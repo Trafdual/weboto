@@ -14,6 +14,7 @@ const cookieParser = require('cookie-parser')
 const MongoStore = require('connect-mongo')
 const userRouter = require('./routes/UserRoutes')
 const xechothue = require('./routes/XeChothueRoutes')
+const lichdatxe =require('./routes/LichDatXeRoutes')
 
 var app = express()
 
@@ -66,6 +67,7 @@ app.use(express.static(path.join(__dirname, '/uploads')))
 
 app.use('/', userRouter)
 app.use('/', xechothue)
+app.use('/',lichdatxe)
 
 app.listen(8080, () => {
   try {
