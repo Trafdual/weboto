@@ -129,81 +129,113 @@ router.get('/vnpay_return', async (req, res) => {
     if (!chuxe.tien) {
       chuxe.tien = 0 // Khởi tạo nếu chưa có
     }
-
-    if (order.lichdat) {
-      const datlich = await LichDat.findById(order.lichdat)
-      datlich.trangthai = 'đã thanh toán'
-      const hoadon = new HoaDon({
-        nguoidat: order.nguoidatId,
-        lichdat: datlich._id,
-        noidung:
-          `thanh toán thuê xe biển số ${xechothue.bienso}: ` + datlich._id
-      })
-      chuxe.tien += order.amount
-      nguoiDat.hoadon.push(hoadon._id)
-      await nguoiDat.save()
-      await chuxe.save()
-      await datlich.save()
-      await hoadon.save()
-    } else {
-      if (order.trangthai === 'đặt cọc') {
-        const lichdat = new LichDat({
-          ngaynhan: ngaynhanDate,
-          ngaytra: ngaytraDate,
-          nguoidat: order.nguoidatId,
-          xe: order.idxe,
-          trangthai: 'đã cọc',
-          tiencoc: order.amount
-        })
-
+    if (vnp_Params['vnp_ResponseCode'] === '00') {
+      if (order.lichdat) {
+        const datlich = await LichDat.findById(order.lichdat)
+        datlich.trangthai = 'đã thanh toán'
+        datlich.tiencoc += order.amount
         const hoadon = new HoaDon({
           nguoidat: order.nguoidatId,
-          lichdat: lichdat._id,
+          lichdat: datlich._id,
           noidung:
-            `Đặt cọc thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
-          tongtien: order.amount
+            `thanh toán thuê xe biển số ${xechothue.bienso}: ` + datlich._id
         })
         chuxe.tien += order.amount
-
-        nguoiDat.lichdatxe.push(lichdat._id)
         nguoiDat.hoadon.push(hoadon._id)
         await nguoiDat.save()
         await chuxe.save()
-        await lichdat.save()
+        await datlich.save()
         await hoadon.save()
       } else {
-        const lichdat = new LichDat({
-          ngaynhan: ngaynhanDate,
-          ngaytra: ngaytraDate,
-          nguoidat: order.nguoidatId,
-          xe: order.idxe,
-          trangthai: 'đã thanh toán',
-          tiencoc: order.amount
-        })
+        if (order.trangthai === 'đặt cọc') {
+          const lichdat = new LichDat({
+            ngaynhan: ngaynhanDate,
+            ngaytra: ngaytraDate,
+            nguoidat: order.nguoidatId,
+            xe: order.idxe,
+            trangthai: 'đã cọc',
+            tiencoc: order.amount
+          })
 
-        const hoadon = new HoaDon({
-          nguoidat: order.nguoidatId,
-          lichdat: lichdat._id,
-          noidung:
-            `thanh toán thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
-          tongtien: order.amount
-        })
-        chuxe.tien += order.amount
+          const hoadon = new HoaDon({
+            nguoidat: order.nguoidatId,
+            lichdat: lichdat._id,
+            noidung:
+              `Đặt cọc thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
+            tongtien: order.amount
+          })
+          chuxe.tien += order.amount
 
-        nguoiDat.lichdatxe.push(lichdat._id)
-        nguoiDat.hoadon.push(hoadon._id)
-        await nguoiDat.save()
-        await chuxe.save()
-        await lichdat.save()
-        await hoadon.save()
+          nguoiDat.lichdatxe.push(lichdat._id)
+          nguoiDat.hoadon.push(hoadon._id)
+          await nguoiDat.save()
+          await chuxe.save()
+          await lichdat.save()
+          await hoadon.save()
+        } else {
+          const lichdat = new LichDat({
+            ngaynhan: ngaynhanDate,
+            ngaytra: ngaytraDate,
+            nguoidat: order.nguoidatId,
+            xe: order.idxe,
+            trangthai: 'đã thanh toán',
+            tiencoc: order.amount
+          })
+
+          const hoadon = new HoaDon({
+            nguoidat: order.nguoidatId,
+            lichdat: lichdat._id,
+            noidung:
+              `thanh toán thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
+            tongtien: order.amount
+          })
+          chuxe.tien += order.amount
+
+          nguoiDat.lichdatxe.push(lichdat._id)
+          nguoiDat.hoadon.push(hoadon._id)
+          await nguoiDat.save()
+          await chuxe.save()
+          await lichdat.save()
+          await hoadon.save()
+        }
       }
-    }
-    await LuuTru.deleteOne({ orderId: orderId })
+      await LuuTru.deleteOne({ orderId: orderId })
 
-    res.json({ message: 'thanh toán thành công' })
+      res.json({ message: 'thanh toán thành công' })
+    } else {
+      res.json({ message: 'thanh toán thất bại' })
+    }
   } else {
-    await LuuTru.deleteOne({ orderId: orderId })
     res.json({ message: 'thanh toán thất bại' })
+  }
+})
+
+router.get('/getlichdadat/:userId', async (req, res) => {
+  try {
+    const userID = req.params.userId
+    const user = await User.findById(userID)
+    const lichdat = await Promise.all(
+      user.lichdatxe.map(async lich => {
+        const ld = await LichDat.findById(lich._id)
+        const xe = await XeChoThue.findById(ld.xe)
+        const chuxe = await User.findById(xe.chuxe)
+        const chuathanhtoan = xe.giachothue - ld.tiencoc
+        return {
+          _id: ld._id,
+          ngaynhan: moment(ld.ngaynhan).format('YYYY-MM-DD'),
+          ngaytra: moment(ld.ngaynhan).format('YYYY-MM-DD'),
+          bienso: xe.bienso,
+          chuxe: chuxe.hovaten,
+          dathanhtoan: ld.tiencoc,
+          chuathanhtoan: chuathanhtoan,
+          trangthai: ld.trangthai
+        }
+      })
+    )
+    res.json(lichdat)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
   }
 })
 
