@@ -2,15 +2,7 @@ const router = require('express').Router()
 const XeChoThue = require('../models/XeChoThueModel')
 const User = require('../models/UserModel')
 const upload = require('./upload')
-const nodemailer = require('nodemailer')
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'trafdual0810@gmail.com',
-    pass: 'plfu ulbm xnwj obha'
-  }
-})
+const transporter = require('./transporter')
 
 router.get('/getxechothue/:loaixe', async (req, res) => {
   try {
@@ -48,6 +40,7 @@ router.get('/getxechothue', async (req, res) => {
             namsanxuat: xe.namsanxuat,
             truyendong: xe.truyendong,
             loaixe: xe.loaixe,
+            bienso: xe.bienso,
             giachothue: xe.giachothue,
             giamgia: xe.giamgia,
             diachixe: xe.diachixe,

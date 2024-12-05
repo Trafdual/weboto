@@ -4,6 +4,8 @@ const XeChoThue = require('../models/XeChoThueModel')
 const User = require('../models/UserModel')
 const moment = require('moment')
 const LuuTru = require('../models/LuuTruModels')
+const nodemailer = require('nodemailer')
+
 
 const LichDat = require('../models/LichdatxeModel')
 function sortObject (obj) {
@@ -201,12 +203,12 @@ router.get('/vnpay_return', async (req, res) => {
       }
       await LuuTru.deleteOne({ orderId: orderId })
 
-      res.json({ message: 'thanh toán thành công' })
+      res.redirect('http://localhost:3000/user')
     } else {
-      res.json({ message: 'thanh toán thất bại' })
+      res.redirect('http://localhost:3000/user')
     }
   } else {
-    res.json({ message: 'thanh toán thất bại' })
+    res.redirect('http://localhost:3000/user')
   }
 })
 
