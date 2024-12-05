@@ -43,18 +43,17 @@ router.get('/getxechothue', async (req, res) => {
         if (xe.duyet === true) {
           return {
             _id: xe._id,
-            hangxe:xe.hangxe,
+            hangxe: xe.hangxe,
             mauxe: xe.mauxe,
             namsanxuat: xe.namsanxuat,
             truyendong: xe.truyendong,
             loaixe: xe.loaixe,
             giachothue: xe.giachothue,
-            giamgia:xe.giamgia,
+            giamgia: xe.giamgia,
             diachixe: xe.diachixe,
             giaotannoi: xe.giaotannoi,
             image: xe.image[0] || '',
-            chuxe: xe.chuxe,
-            
+            chuxe: xe.chuxe
           }
         }
         return null
@@ -379,6 +378,22 @@ router.get('/getxedadangky/:userid', async (req, res) => {
       })
     )
     res.json(xechothue)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+router.post('/deletexechothue/:idxe', async (req, res) => {
+  try {
+    const idxe = req.params.idxe
+    const xechothue = await XeChoThue.findById(idxe)
+    const chuxe = await User.findById(xechothue.chuxe)
+    chuxe.xechothue = chuxe.xechothue.filter(
+      xe => xe._id.toString() !== idxe.toString()
+    )
+    await chuxe.save()
+    await XeChoThue.findByIdAndDelete(idxe)
+    res.json({ message: 'Xóa xe thành công' })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Đã xảy ra lỗi.' })
