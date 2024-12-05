@@ -30,8 +30,10 @@ router.get('/getxechothue', async (req, res) => {
   try {
     const xechothue = await XeChoThue.find().lean()
 
-    const xechothuejson = xechothue
-      .map(xe => {
+    const xechothuejson = await Promise.all(
+      xechothue.map(async xe => {
+        const chuxe = await User.findById(xe.chuxe)
+
         if (xe.duyet === true) {
           return {
             _id: xe._id,
@@ -46,14 +48,16 @@ router.get('/getxechothue', async (req, res) => {
             diachixe: xe.diachixe,
             giaotannoi: xe.giaotannoi,
             image: xe.image[0] || '',
-            chuxe: xe.chuxe
+            chuxe: chuxe.hovaten,
+            role: chuxe.role
           }
         }
         return null
       })
-      .filter(xe => xe !== null)
+    )
+    const data = xechothuejson.filter(xe => xe !== null)
 
-    res.json(xechothuejson)
+    res.json(data)
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Đã xảy ra lỗi.' })
@@ -334,7 +338,7 @@ router.post('/duyetxedangky/:idxechothue', async (req, res) => {
           <p>Giá cho thuê: ${xechothue.giachothue} VND</p>
           <p>Địa chỉ xe: ${xechothue.diachixe}</p>
           <p><strong>Cảm ơn bạn đã đăng ký!</strong></p>
-          ;<p>
+          <p>
   <strong>Đơn đăng ký của bạn đã được duyệt!</strong>
 </p>
         `

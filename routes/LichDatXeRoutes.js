@@ -4,8 +4,7 @@ const XeChoThue = require('../models/XeChoThueModel')
 const User = require('../models/UserModel')
 const moment = require('moment')
 const LuuTru = require('../models/LuuTruModels')
-const nodemailer = require('nodemailer')
-
+const transporter = require('./transporter')
 
 const LichDat = require('../models/LichdatxeModel')
 function sortObject (obj) {
@@ -56,7 +55,7 @@ router.post('/create_payment_url', async (req, res, next) => {
   let ngaytra = req.body.ngaytra
   let lichdat = req.body.lichdat
   let trangthai = req.body.trangthai
-
+  const xechothue = await XeChoThue.findById(idxe)
   if (locale === null || locale === '') {
     locale = 'vn'
   }
@@ -77,6 +76,10 @@ router.post('/create_payment_url', async (req, res, next) => {
   if (bankCode !== null && bankCode !== '') {
     vnp_Params['vnp_BankCode'] = bankCode
   }
+  let ngaynhan1 = new Date(ngaynhan)
+  let ngaytra1 = new Date(ngaytra)
+  let soNgayThue = (ngaytra1 - ngaynhan1) / (1000 * 60 * 60 * 24)
+
   let order = new LuuTru({
     orderId: orderId,
     nguoidatId: nguoidat,
@@ -87,6 +90,7 @@ router.post('/create_payment_url', async (req, res, next) => {
     amount: amount,
     trangthai: trangthai
   })
+  order.tiencoc = xechothue.giachothue * soNgayThue - order.amount
   await order.save()
 
   vnp_Params = sortObject(vnp_Params)
@@ -132,79 +136,55 @@ router.get('/vnpay_return', async (req, res) => {
       chuxe.tien = 0 // Khởi tạo nếu chưa có
     }
     if (vnp_Params['vnp_ResponseCode'] === '00') {
-      if (order.lichdat) {
-        const datlich = await LichDat.findById(order.lichdat)
-        datlich.trangthai = 'đã thanh toán'
-        datlich.tiencoc += order.amount
-        const hoadon = new HoaDon({
-          nguoidat: order.nguoidatId,
-          lichdat: datlich._id,
-          noidung:
-            `thanh toán thuê xe biển số ${xechothue.bienso}: ` + datlich._id
-        })
-        chuxe.tien += order.amount
-        nguoiDat.hoadon.push(hoadon._id)
-        await nguoiDat.save()
-        await chuxe.save()
-        await datlich.save()
-        await hoadon.save()
-      } else {
-        if (order.trangthai === 'đặt cọc') {
-          const lichdat = new LichDat({
-            ngaynhan: ngaynhanDate,
-            ngaytra: ngaytraDate,
-            nguoidat: order.nguoidatId,
-            xe: order.idxe,
-            trangthai: 'đã cọc',
-            tiencoc: order.amount
-          })
+      const lichdat = new LichDat({
+        ngaynhan: ngaynhanDate,
+        ngaytra: ngaytraDate,
+        nguoidat: order.nguoidatId,
+        xe: order.idxe,
+        trangthai: 'đã thanh toán',
+        tiencoc: order.tiencoc
+      })
 
-          const hoadon = new HoaDon({
-            nguoidat: order.nguoidatId,
-            lichdat: lichdat._id,
-            noidung:
-              `Đặt cọc thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
-            tongtien: order.amount
-          })
-          chuxe.tien += order.amount
+      const hoadon = new HoaDon({
+        nguoidat: order.nguoidatId,
+        lichdat: lichdat._id,
+        noidung:
+          `Thanh toán thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
+        tongtien: order.amount
+      })
+      const fulltien = order.amount + order.tiencoc
+      chuxe.tien += fulltien
 
-          nguoiDat.lichdatxe.push(lichdat._id)
-          nguoiDat.hoadon.push(hoadon._id)
-          await nguoiDat.save()
-          await chuxe.save()
-          await lichdat.save()
-          await hoadon.save()
-        } else {
-          const lichdat = new LichDat({
-            ngaynhan: ngaynhanDate,
-            ngaytra: ngaytraDate,
-            nguoidat: order.nguoidatId,
-            xe: order.idxe,
-            trangthai: 'đã thanh toán',
-            tiencoc: order.amount
-          })
-
-          const hoadon = new HoaDon({
-            nguoidat: order.nguoidatId,
-            lichdat: lichdat._id,
-            noidung:
-              `thanh toán thuê xe biển số ${xechothue.bienso}: ` + lichdat._id,
-            tongtien: order.amount
-          })
-          chuxe.tien += order.amount
-
-          nguoiDat.lichdatxe.push(lichdat._id)
-          nguoiDat.hoadon.push(hoadon._id)
-          await chuxe.save()
-          await lichdat.save()
-          await hoadon.save()
-          await nguoiDat.save()
-        }
-      }
+      nguoiDat.lichdatxe.push(lichdat._id)
+      nguoiDat.hoadon.push(hoadon._id)
+      await nguoiDat.save()
+      await chuxe.save()
+      await lichdat.save()
+      await hoadon.save()
       await LuuTru.deleteOne({ orderId: orderId })
 
-      res.redirect('http://localhost:3000/user')
-    } else {
+      const mailOptions = {
+        from: nguoiDat.email,
+        to: nguoiDat.email, // Email của người đặt
+        subject: 'Xác nhận thanh toán hóa đơn thuê xe',
+        html: `
+          <h1>Hóa đơn thuê xe</h1>
+          <p>Xin chào, ${nguoiDat.hovaten},</p>
+          <p>Chúng tôi đã nhận được thanh toán cho dịch vụ thuê xe của bạn.</p>
+          <h3>Thông tin hóa đơn:</h3>
+          <ul>
+            <li>Biển số xe: ${xechothue.bienso}</li>
+            <li>Ngày nhận xe: ${moment(ngaynhanDate).format('DD/MM/YYYY')}</li>
+            <li>Ngày trả xe: ${moment(ngaytraDate).format('DD/MM/YYYY')}</li>
+            <li>Giá cho thuê: ${xechothue.giachothue.toLocaleString()} VND/ngày</li>
+            <li>Tiền cọc: ${order.tiencoc.toLocaleString()} VND</li>
+            <li>Tổng tiền: ${fulltien.toLocaleString()} VND</li>
+          </ul>
+          <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+        `
+      }
+      await transporter.sendMail(mailOptions)
+
       res.redirect('http://localhost:3000/user')
     }
   } else {
@@ -221,15 +201,20 @@ router.get('/getlichdadat/:userId', async (req, res) => {
         const ld = await LichDat.findById(lich._id)
         const xe = await XeChoThue.findById(ld.xe)
         const chuxe = await User.findById(xe.chuxe)
-        const chuathanhtoan = xe.giachothue - ld.tiencoc
+        const ngaynhan = new Date(ld.ngaynhan)
+        const ngaytra = new Date(ld.ngaytra)
+        const soNgayThue = (ngaytra - ngaynhan) / (1000 * 60 * 60 * 24)
+        const chuathanhtoan = xe.giachothue * soNgayThue - ld.tiencoc
+
         return {
           _id: ld._id,
           ngaynhan: moment(ld.ngaynhan).format('YYYY-MM-DD'),
           ngaytra: moment(ld.ngaynhan).format('YYYY-MM-DD'),
           bienso: xe.bienso,
           chuxe: chuxe.hovaten,
-          dathanhtoan: ld.tiencoc,
-          chuathanhtoan: chuathanhtoan,
+          tiencoc: ld.tiencoc,
+          tongtien: xe.giachothue * soNgayThue,
+          phaitra: chuathanhtoan,
           trangthai: ld.trangthai
         }
       })

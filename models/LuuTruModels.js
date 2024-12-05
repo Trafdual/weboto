@@ -16,8 +16,12 @@ const luutruSchema = new mongoose.Schema({
   amount: {
     type: Number
   },
-  trangthai:{
-    type: String}
+  tiencoc: {
+    type: Number
+  },
+  trangthai: {
+    type: String
+  }
 })
 
 const LuuTru = mongoose.model('luutru', luutruSchema)
