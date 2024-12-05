@@ -119,12 +119,12 @@ router.post(
       })
       xechothue.image = image
       xechothue.loaixe = 'xe tự lái'
-      if (giaotannoi === "true") {
+      if (giaotannoi === 'true') {
         xechothue.quangduonggiaoxe = quangduonggiaoxe
         xechothue.phigiaoxe = phigiaoxe
         xechothue.mienphigxkm = mienphigxkm
       }
-      if (gioihan === "true") {
+      if (gioihan === 'true') {
         xechothue.sokmtrongngay = sokmtrongngay
         xechothue.phivuotgh = phivuotgh
       }
@@ -134,7 +134,7 @@ router.post(
 
       const mailOptions = {
         from: 'trafdual0810@gmail.com',
-        to: 'totnghiepduan2023@gmail.com',
+        to: user.email,
         subject: 'Xác nhận đăng ký xe tự lái',
         html: `
           <h3>Thông tin đăng ký xe tự lái của bạn:</h3>
@@ -146,7 +146,7 @@ router.post(
           <p>Giá cho thuê: ${giachothue} VND</p>
           <p>Địa chỉ xe: ${diachixe}</p>
           <p><strong>Cảm ơn bạn đã đăng ký!</strong></p>
-          ;<p>
+          <p>
   <strong>Đơn đăng ký của bạn đang được xem xét, chúng tôi sẽ phản hổi lại sớm nhât!</strong>
 </p>
         `
@@ -221,13 +221,13 @@ router.post(
         duyet: true
       })
       xechothue.image = image
-      if (giaotannoi === "true") {
+      if (giaotannoi === 'true') {
         xechothue.quangduonggiaoxe = quangduonggiaoxe
         xechothue.phigiaoxe = phigiaoxe
         xechothue.mienphigxkm = mienphigxkm
         await xechothue.save()
       }
-      if (gioihan === "true") {
+      if (gioihan === 'true') {
         xechothue.sokmtrongngay = sokmtrongngay
         xechothue.phivuotgh = phivuotgh
         await xechothue.save()
