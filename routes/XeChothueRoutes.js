@@ -119,12 +119,12 @@ router.post(
       })
       xechothue.image = image
       xechothue.loaixe = 'xe tự lái'
-      if (giaotannoi === true) {
+      if (giaotannoi === "true") {
         xechothue.quangduonggiaoxe = quangduonggiaoxe
         xechothue.phigiaoxe = phigiaoxe
         xechothue.mienphigxkm = mienphigxkm
       }
-      if (gioihan === true) {
+      if (gioihan === "true") {
         xechothue.sokmtrongngay = sokmtrongngay
         xechothue.phivuotgh = phivuotgh
       }
@@ -221,14 +221,16 @@ router.post(
         duyet: true
       })
       xechothue.image = image
-      if (giaotannoi === true) {
+      if (giaotannoi === "true") {
         xechothue.quangduonggiaoxe = quangduonggiaoxe
         xechothue.phigiaoxe = phigiaoxe
         xechothue.mienphigxkm = mienphigxkm
+        await xechothue.save()
       }
-      if (gioihan === true) {
+      if (gioihan === "true") {
         xechothue.sokmtrongngay = sokmtrongngay
         xechothue.phivuotgh = phivuotgh
+        await xechothue.save()
       }
       xechothue.chuxe = user._id
       user.xechothue = xechothue._id
