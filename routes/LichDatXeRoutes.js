@@ -193,10 +193,10 @@ router.get('/vnpay_return', async (req, res) => {
 
           nguoiDat.lichdatxe.push(lichdat._id)
           nguoiDat.hoadon.push(hoadon._id)
-          await nguoiDat.save()
           await chuxe.save()
           await lichdat.save()
           await hoadon.save()
+          await nguoiDat.save()
         }
       }
       await LuuTru.deleteOne({ orderId: orderId })

@@ -43,15 +43,18 @@ router.get('/getxechothue', async (req, res) => {
         if (xe.duyet === true) {
           return {
             _id: xe._id,
+            hangxe:xe.hangxe,
             mauxe: xe.mauxe,
             namsanxuat: xe.namsanxuat,
             truyendong: xe.truyendong,
             loaixe: xe.loaixe,
             giachothue: xe.giachothue,
+            giamgia:xe.giamgia,
             diachixe: xe.diachixe,
             giaotannoi: xe.giaotannoi,
             image: xe.image[0] || '',
             chuxe: xe.chuxe,
+            
           }
         }
         return null
