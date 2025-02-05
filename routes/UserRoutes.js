@@ -58,21 +58,21 @@ router.post('/loginfull', async (req, res) => {
     const user = await User.findOne({ email })
 
     if (!user) {
-      res.json({ message: 'email không chính xác' })
+     return res.json({ message: 'email không chính xác' })
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
-      res.json({ message: 'nhập sai mật khẩu' })
+      return res.json({ message: 'nhập sai mật khẩu' })
     }
 
     if (user.role === 'admin') {
-      res.json({ role: 'admin', user: user })
+      return res.json({ role: 'admin', user: user })
     } else if (user.role === 'staff') {
-      res.json({ role: 'staff', user: user })
+      return res.json({ role: 'staff', user: user })
     } else {
-      res.json({ role: 'user', user: user })
+      return res.json({ role: 'user', user: user })
     }
   } catch (error) {
     console.error(error)
@@ -93,6 +93,5 @@ router.post('/themgplx/:iduser', async (req, res) => {
     res.status(500).json({ message: 'Đã xảy ra lỗi.' })
   }
 })
-
 
 module.exports = router

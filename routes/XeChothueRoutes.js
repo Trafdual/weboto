@@ -399,4 +399,42 @@ router.post('/deletexechothue/:idxe', async (req, res) => {
   }
 })
 
+
+router.get('/checkin', async (req, res) => {
+  try {
+    const xechothue = await XeChoThue.find({ duyet: true }).lean()
+    const xechothuejson = await Promise.all(
+      xechothue.map(async xe => {
+        const user = await User.findById(xe.chuxe)
+        return {
+          _id: xe._id,
+          bienso: xe.bienso,
+          hangxe: xe.hangxe,
+          mauxe: xe.mauxe,
+          soghe: xe.soghe,
+          loaixe: xe.loaixe,
+          namsanxuat: xe.namsanxuat,
+          truyendong: xe.truyendong,
+          mota: xe.mota,
+          giachothue: xe.giachothue,
+          diachixe: xe.diachixe,
+          dieukhoan: xe.dieukhoan,
+          image: xe.image[0],
+          chuxe: {
+            hovaten: user.hovaten,
+            phone: user.phone,
+            email: user.email,
+            giaypheplaixe: user.giaypheplaixe || 'không có'
+          }
+        }
+      })
+    )
+    res.json(xechothuejson)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Đã xảy ra lỗi.' })
+  }
+})
+
+
 module.exports = router
